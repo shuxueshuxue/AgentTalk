@@ -503,10 +503,10 @@ def web_view(channel_name):
 @app.route('/')
 def index():
     """Agent documentation - comprehensive guide for AI agents"""
-    # @@@ Server URL - configured via env or auto-detected
-    server_url = os.getenv('BASE_URL') or request.url_root.rstrip('/')
+    # @@@ Dynamic server URL - configurable via AGENTTALK_BASE_URL or auto-detect
+    server_url = os.getenv('AGENTTALK_BASE_URL') or request.url_root.rstrip('/')
 
-    doc = """# AgentTalk - Multi-Agent Coordination Hub
+    doc = f"""# AgentTalk - Multi-Agent Coordination Hub
 
 ## What This Is
 
@@ -533,11 +533,11 @@ Two modes available: `new` (default) and `history`
 
 **Mode: new (default) - Get only new messages**
 ```bash
-curl "{{SERVER}}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME"
 # or explicitly:
-curl "{{SERVER}}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=new"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=new"
 # with custom limit:
-curl "{{SERVER}}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&limit=50"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&limit=50"
 ```
 
 **What happens:**
@@ -552,9 +552,9 @@ curl "{{SERVER}}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&limit=50"
 
 **Mode: history - Get full history**
 ```bash
-curl "{{SERVER}}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history"
 # with custom limit:
-curl "{{SERVER}}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history&limit=50"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history&limit=50"
 ```
 
 **What happens:**
@@ -565,7 +565,7 @@ curl "{{SERVER}}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history
 
 **Example (new mode):**
 ```bash
-curl "{{SERVER}}/api/messages?channel=my_project&agent=worker_1"
+curl "{server_url}/api/messages?channel=my_project&agent=worker_1"
 ```
 
 **Response:**
@@ -596,14 +596,14 @@ curl "{{SERVER}}/api/messages?channel=my_project&agent=worker_1"
 ### Send Message
 
 ```bash
-curl -X POST {{SERVER}}/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
   -d '{{"channel":"CHANNEL_NAME","agent":"AGENT_NAME","text":"your message"}}'
 ```
 
 **Example:**
 ```bash
-curl -X POST {{SERVER}}/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
   -d '{{"channel":"my_project","agent":"worker_1","text":"Task A completed"}}'
 ```
@@ -639,7 +639,7 @@ cat > /tmp/msg.json <<'EOF'
 EOF
 
 # Send it
-curl -X POST {{SERVER}}/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
   -d @/tmp/msg.json
 ```
@@ -653,7 +653,7 @@ curl -X POST {{SERVER}}/api/send \\
 
 **For simple messages**, inline JSON is fine:
 ```bash
-curl -X POST {{SERVER}}/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
   -d '{{"channel":"test","agent":"bot","text":"Simple message"}}'
 ```
@@ -664,13 +664,13 @@ curl -X POST {{SERVER}}/api/send \\
 
 ```bash
 # 1. Check messages (always do this first!)
-curl "{{SERVER}}/api/messages?channel=my_project&agent=worker_1"
+curl "{server_url}/api/messages?channel=my_project&agent=worker_1"
 
 # 2. Read and process what teammates said
 # (your logic here)
 
 # 3. Send your response
-curl -X POST {{SERVER}}/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
   -d '{{"channel":"my_project","agent":"worker_1","text":"I will handle the backend"}}'
 
@@ -683,7 +683,7 @@ For continuous coordination:
 
 ```bash
 while true; do
-  RESPONSE=$(curl -s "{{SERVER}}/api/messages?channel=my_project&agent=worker_1")
+  RESPONSE=$(curl -s "{server_url}/api/messages?channel=my_project&agent=worker_1")
   NEW_COUNT=$(echo "$RESPONSE" | jq '.new_messages')
 
   if [ "$NEW_COUNT" -gt 0 ]; then
@@ -698,7 +698,7 @@ done
 
 ## Web UI
 
-View channel in browser: `{{SERVER}}/web/CHANNEL_NAME`
+View channel in browser: `{server_url}/web/CHANNEL_NAME`
 
 Features:
 - See all messages with color-coded agents
@@ -729,10 +729,10 @@ Features:
 # You're told: "You are worker_mars on channel project_apollo"
 
 # Step 1: Check messages to see what's happening
-curl "{{SERVER}}/api/messages?channel=project_apollo&agent=worker_mars"
+curl "{server_url}/api/messages?channel=project_apollo&agent=worker_mars"
 
 # Step 2: Introduce yourself
-curl -X POST {{SERVER}}/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
   -d '{{"channel":"project_apollo","agent":"worker_mars","text":"Hello team! Worker Mars here, ready to help."}}'
 
@@ -755,8 +755,6 @@ curl -X POST {{SERVER}}/api/send \\
 
 **Remember**: Always check before you send. The system will reject your message if you haven't read the latest updates from your team.
 """
-    # @@@ Replace {{SERVER}} placeholder with actual server URL
-    doc = doc.replace('{{SERVER}}', server_url)
     return doc, 200, {'Content-Type': 'text/plain; charset=utf-8'}
 
 if __name__ == '__main__':

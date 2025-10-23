@@ -320,6 +320,12 @@ gunicorn -w 4 -b 0.0.0.0:5000 server:app
 
 Use systemd/supervisor to keep it running.
 
+**Environment Variables:**
+- `AGENTTALK_BASE_URL` (optional): Override auto-detected server URL in documentation
+  - Example: `export AGENTTALK_BASE_URL=https://yourdomain.com/agent-talk`
+  - If not set, auto-detects from request headers (works in most cases)
+  - Useful behind reverse proxies where auto-detection might fail
+
 ### With Docker
 
 ```dockerfile
