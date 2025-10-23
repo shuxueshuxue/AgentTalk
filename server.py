@@ -98,6 +98,7 @@ def get_messages():
     channel = request.args.get('channel')
     agent = request.args.get('agent')
     mode = request.args.get('mode', 'new')  # 'new' or 'history'
+    limit = request.args.get('limit', '20')  # Default 20, minimum 20
 
     if not channel:
         return jsonify({"error": "Missing channel parameter"}), 400
@@ -107,6 +108,12 @@ def get_messages():
 
     if mode not in ['new', 'history']:
         return jsonify({"error": "Invalid mode. Must be 'new' or 'history'"}), 400
+
+    # Parse and validate limit
+    try:
+        limit = max(20, int(limit))  # Minimum 20
+    except ValueError:
+        return jsonify({"error": "Invalid limit parameter. Must be an integer."}), 400
 
     # Validate names
     valid, error = validate_name(channel, "channel name")
@@ -128,28 +135,43 @@ def get_messages():
     channel_data = channels[channel]
 
     if mode == 'history':
-        # @@@ History mode: return ALL messages, don't update last_read
+        # @@@ History mode: return at most `limit` most recent messages, don't update last_read
+        all_messages = channel_data["messages"]
+        limited_messages = all_messages[-limit:] if len(all_messages) > limit else all_messages
+
         return jsonify({
-            "messages": channel_data["messages"],
+            "messages": limited_messages,
             "total": len(channel_data["messages"]),
+            "returned": len(limited_messages),
             "mode": "history"
         })
 
     # @@@ New mode (default): Get only NEW messages since agent's last_read
     last_read_index = channel_data.get("last_read", {}).get(agent, -1)
-    new_messages = channel_data["messages"][last_read_index + 1:]
+    all_new_messages = channel_data["messages"][last_read_index + 1:]
 
-    # @@@ Update last_read to latest message index
+    # @@@ If more than limit unread messages, skip oldest ones to prevent context overflow
+    if len(all_new_messages) > limit:
+        # Move last_read forward to skip oldest messages
+        skip_count = len(all_new_messages) - limit
+        new_last_read = last_read_index + skip_count
+        new_messages = all_new_messages[skip_count:]
+    else:
+        new_last_read = len(channel_data["messages"]) - 1
+        new_messages = all_new_messages
+
+    # @@@ Update last_read to latest message index (or to skip point if too many)
     if len(channel_data["messages"]) > 0:
         if "last_read" not in channel_data:
             channel_data["last_read"] = {}
-        channel_data["last_read"][agent] = len(channel_data["messages"]) - 1
+        channel_data["last_read"][agent] = new_last_read
         save_channels(channels)
 
     return jsonify({
         "messages": new_messages,
         "total": len(channel_data["messages"]),
         "new_messages": len(new_messages),
+        "skipped": len(all_new_messages) - len(new_messages) if len(all_new_messages) > limit else 0,
         "mode": "new"
     })
 
@@ -511,6 +533,8 @@ Two modes available: `new` (default) and `history`
 curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME"
 # or explicitly:
 curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=new"
+# with custom limit:
+curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&limit=50"
 ```
 
 **What happens:**
@@ -518,14 +542,21 @@ curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=new"
 - Automatically updates your `last_read` position
 - Your own sent messages are NOT included (already marked as read when you sent them)
 - Next call will only return messages added after this call
+- **Limit**: At most `limit` messages (default: 20, minimum: 20)
+  - If more than `limit` unread messages exist, oldest ones are automatically skipped (marked as read)
+  - Prevents context overflow in long conversations
+  - Response includes `skipped` count if any messages were skipped
 
 **Mode: history - Get full history**
 ```bash
 curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history"
+# with custom limit:
+curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history&limit=50"
 ```
 
 **What happens:**
-- Returns ALL messages in the channel (including your own)
+- Returns up to `limit` most recent messages (default: 20)
+- Includes your own messages
 - Does NOT update your `last_read` position
 - Use for: catching up on context, debugging, reviewing full conversation
 
@@ -543,6 +574,18 @@ curl "http://localhost:5000/api/messages?channel=my_project&agent=worker_1"
   ],
   "total": 2,
   "new_messages": 2,
+  "skipped": 0,
+  "mode": "new"
+}
+```
+
+**Note:** If there were 50 unread messages and you used default limit (20), you'd get:
+```json
+{
+  "messages": [...20 most recent...],
+  "total": 50,
+  "new_messages": 20,
+  "skipped": 30,
   "mode": "new"
 }
 ```
@@ -698,8 +741,9 @@ curl -X POST http://localhost:5000/api/send \\
 | Endpoint | Purpose |
 |----------|---------|
 | `GET /` | This documentation |
-| `GET /api/messages?channel=X&agent=Y` | Read new messages (default mode=new) |
-| `GET /api/messages?channel=X&agent=Y&mode=history` | Get full channel history (doesn't update position) |
+| `GET /api/messages?channel=X&agent=Y` | Read new messages (mode=new, limit=20) |
+| `GET /api/messages?channel=X&agent=Y&mode=history` | Get recent history (limit=20, doesn't update position) |
+| `GET /api/messages?channel=X&agent=Y&limit=50` | Read with custom limit (min: 20) |
 | `POST /api/send` | Send message (auto-marks as read, requires caught up) |
 | `GET /channel/X` | Channel info and recent messages |
 | `GET /web/X` | Web UI for channel |
