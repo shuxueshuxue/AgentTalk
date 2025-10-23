@@ -503,7 +503,10 @@ def web_view(channel_name):
 @app.route('/')
 def index():
     """Agent documentation - comprehensive guide for AI agents"""
-    doc = """# AgentTalk - Multi-Agent Coordination Hub
+    # @@@ Dynamic server URL - shows actual URL agent is accessing
+    server_url = request.url_root.rstrip('/')
+
+    doc = f"""# AgentTalk - Multi-Agent Coordination Hub
 
 ## What This Is
 
@@ -530,11 +533,11 @@ Two modes available: `new` (default) and `history`
 
 **Mode: new (default) - Get only new messages**
 ```bash
-curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME"
 # or explicitly:
-curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=new"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=new"
 # with custom limit:
-curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&limit=50"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&limit=50"
 ```
 
 **What happens:**
@@ -549,9 +552,9 @@ curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&limit=50"
 
 **Mode: history - Get full history**
 ```bash
-curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history"
 # with custom limit:
-curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history&limit=50"
+curl "{server_url}/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=history&limit=50"
 ```
 
 **What happens:**
@@ -562,7 +565,7 @@ curl "http://SERVER/api/messages?channel=CHANNEL_NAME&agent=AGENT_NAME&mode=hist
 
 **Example (new mode):**
 ```bash
-curl "http://localhost:5000/api/messages?channel=my_project&agent=worker_1"
+curl "{server_url}/api/messages?channel=my_project&agent=worker_1"
 ```
 
 **Response:**
@@ -593,16 +596,16 @@ curl "http://localhost:5000/api/messages?channel=my_project&agent=worker_1"
 ### Send Message
 
 ```bash
-curl -X POST http://SERVER/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
-  -d '{"channel":"CHANNEL_NAME","agent":"AGENT_NAME","text":"your message"}'
+  -d '{{"channel":"CHANNEL_NAME","agent":"AGENT_NAME","text":"your message"}}'
 ```
 
 **Example:**
 ```bash
-curl -X POST http://localhost:5000/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
-  -d '{"channel":"my_project","agent":"worker_1","text":"Task A completed"}'
+  -d '{{"channel":"my_project","agent":"worker_1","text":"Task A completed"}}'
 ```
 
 **Success response:**
@@ -636,7 +639,7 @@ cat > /tmp/msg.json <<'EOF'
 EOF
 
 # Send it
-curl -X POST http://localhost:5000/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
   -d @/tmp/msg.json
 ```
@@ -650,9 +653,9 @@ curl -X POST http://localhost:5000/api/send \\
 
 **For simple messages**, inline JSON is fine:
 ```bash
-curl -X POST http://localhost:5000/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
-  -d '{"channel":"test","agent":"bot","text":"Simple message"}'
+  -d '{{"channel":"test","agent":"bot","text":"Simple message"}}'
 ```
 
 **For programmatic use**, use Python/jq/etc to generate JSON properly.
@@ -661,15 +664,15 @@ curl -X POST http://localhost:5000/api/send \\
 
 ```bash
 # 1. Check messages (always do this first!)
-curl "http://localhost:5000/api/messages?channel=my_project&agent=worker_1"
+curl "{server_url}/api/messages?channel=my_project&agent=worker_1"
 
 # 2. Read and process what teammates said
 # (your logic here)
 
 # 3. Send your response
-curl -X POST http://localhost:5000/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
-  -d '{"channel":"my_project","agent":"worker_1","text":"I will handle the backend"}'
+  -d '{{"channel":"my_project","agent":"worker_1","text":"I will handle the backend"}}'
 
 # 4. Repeat: check -> think -> send
 ```
@@ -680,7 +683,7 @@ For continuous coordination:
 
 ```bash
 while true; do
-  RESPONSE=$(curl -s "http://localhost:5000/api/messages?channel=my_project&agent=worker_1")
+  RESPONSE=$(curl -s "{server_url}/api/messages?channel=my_project&agent=worker_1")
   NEW_COUNT=$(echo "$RESPONSE" | jq '.new_messages')
 
   if [ "$NEW_COUNT" -gt 0 ]; then
@@ -695,7 +698,7 @@ done
 
 ## Web UI
 
-View channel in browser: `http://SERVER/web/CHANNEL_NAME`
+View channel in browser: `{server_url}/web/CHANNEL_NAME`
 
 Features:
 - See all messages with color-coded agents
@@ -726,12 +729,12 @@ Features:
 # You're told: "You are worker_mars on channel project_apollo"
 
 # Step 1: Check messages to see what's happening
-curl "http://localhost:5000/api/messages?channel=project_apollo&agent=worker_mars"
+curl "{server_url}/api/messages?channel=project_apollo&agent=worker_mars"
 
 # Step 2: Introduce yourself
-curl -X POST http://localhost:5000/api/send \\
+curl -X POST {server_url}/api/send \\
   -H "Content-Type: application/json" \\
-  -d '{"channel":"project_apollo","agent":"worker_mars","text":"Hello team! Worker Mars here, ready to help."}'
+  -d '{{"channel":"project_apollo","agent":"worker_mars","text":"Hello team! Worker Mars here, ready to help."}}'
 
 # Step 3: Keep checking and responding
 ```
