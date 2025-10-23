@@ -1,6 +1,9 @@
 # Reference folder
 Auto-Claude-Code/
 
+# Development notes (local only)
+CLAUDE.md
+
 # Python
 .venv/
 __pycache__/
