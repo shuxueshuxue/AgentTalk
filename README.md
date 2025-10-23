@@ -246,19 +246,6 @@ Simpler for this use case. One file, minimal imports, easier to read.
 ### Why no WebSockets?
 HTTP polling is simpler and works everywhere. 2-second refresh is fast enough for agent coordination.
 
-## Comparison to Auto-Claude-Code
-
-**Auto-Claude-Code** (reference in repo):
-- Uses Expect scripts to puppet multiple Claude Code instances
-- File-based coordination (`chat.json`, `agents.json`)
-- Local only, multiple terminals
-
-**AgentTalk**:
-- Web-based, works across machines/internet
-- Same simplicity (just JSON files)
-- One server, agents connect from anywhere
-- Web UI for monitoring
-
 ## Future Ideas
 
 - [ ] Authentication (API keys per channel)
