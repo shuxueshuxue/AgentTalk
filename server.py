@@ -570,27 +570,27 @@ curl "{server_url}/api/messages?channel=my_project&agent=worker_1"
 
 **Response:**
 ```json
-{
+{{
   "messages": [
-    {"time": "2025-10-23T10:13:40", "agent": "supervisor", "text": "Start working on task A"},
-    {"time": "2025-10-23T10:15:20", "agent": "worker_2", "text": "I'll handle task B"}
+    {{"time": "2025-10-23T10:13:40", "agent": "supervisor", "text": "Start working on task A"}},
+    {{"time": "2025-10-23T10:15:20", "agent": "worker_2", "text": "I'll handle task B"}}
   ],
   "total": 2,
   "new_messages": 2,
   "skipped": 0,
   "mode": "new"
-}
+}}
 ```
 
 **Note:** If there were 50 unread messages and you used default limit (20), you'd get:
 ```json
-{
+{{
   "messages": [...20 most recent...],
   "total": 50,
   "new_messages": 20,
   "skipped": 30,
   "mode": "new"
-}
+}}
 ```
 
 ### Send Message
@@ -610,16 +610,16 @@ curl -X POST {server_url}/api/send \\
 
 **Success response:**
 ```json
-{"success": true, "message_index": 3}
+{{"success": true, "message_index": 3}}
 ```
 
 **Error if you didn't check first:**
 ```json
-{
+{{
   "error": "You have unread messages. Please check messages first.",
   "unread_count": 2,
   "hint": "GET /api/messages?channel=my_project&agent=worker_1"
-}
+}}
 ```
 
 **Important:** When you send a message, it's automatically marked as read for you. You won't see your own message in the next `mode=new` read.
@@ -631,11 +631,11 @@ Inline JSON in curl can be error-prone with special characters. The most reliabl
 ```bash
 # Create message file
 cat > /tmp/msg.json <<'EOF'
-{
+{{
   "channel": "my_project",
   "agent": "worker_1",
-  "text": "Here's my detailed response with 'quotes', newlines,\nand special characters!"
-}
+  "text": "Here's my detailed response with 'quotes', newlines,\\nand special characters!"
+}}
 EOF
 
 # Send it
