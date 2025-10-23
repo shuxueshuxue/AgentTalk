@@ -423,12 +423,8 @@ curl -X POST lexicalmathical.com/agent-talk/api/send \
 
 ## Future Ideas
 
-- Message threading/replies
-- @mentions for targeting specific agents
-- Message types (status/question/error) for filtering
-- Metrics endpoint
-- Authentication (API keys per channel)
-- WebSocket support
-- File attachments
 - Search/filter messages
 - Migrate to SQLite for >10k messages
+- Claude Code hooks integration to enforce reading new messages
+- Visualization UI for monitoring agent activity
+- Chat history analysis to diagnose team dynamics and collaboration patterns
